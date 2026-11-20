@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Пополнение Robux</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0E1A;
+    --bg-2: #101424;
+    --surface: #141A30;
+    --surface-2: #1B2240;
+    --line: #262D4D;
+    --text: #F3F5FF;
+    --muted: #8B91B3;
+    --mint: #2EE6A6;
+    --mint-soft: rgba(46,230,166,.14);
+    --violet: #8B6BF2;
+    --violet-soft: rgba(139,107,242,.16);
+    --amber: #F2B341;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #F4F5FA;
+    --bg-2: #EAECF6;
+    --surface: #FFFFFF;
+    --surface-2: #F0F1FA;
+    --line: #DFE2F0;
+    --text: #171A2B;
+    --muted: #666C8A;
+    --mint: #0FAE7C;
+    --mint-soft: rgba(15,174,124,.12);
+    --violet: #6A4CDB;
+    --violet-soft: rgba(106,76,219,.12);
+    --amber: #C98318;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background:
+      radial-gradient(900px 500px at 15% -5%, var(--violet-soft), transparent 60%),
+      radial-gradient(700px 420px at 100% 0%, var(--mint-soft), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    min-height: 100%;
+  }
+  .display { font-family: "Baloo 2", "Inter", sans-serif; }
+
+  .wrap { max-width: 460px; margin: 0 auto; padding: 22px 18px 36px; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 26px;
+  }
+  .coin {
+    width: 56px; height: 56px;
+    flex-shrink: 0;
+    border-radius: 16px;
+    background: linear-gradient(155deg, var(--mint), #1FBF8B);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 24px -8px rgba(46,230,166,.55);
+    transform: rotate(-6deg);
+  }
+  .coin svg { width: 28px; height: 28px; }
+  .hero h1 {
+    font-size: 22px;
+    margin: 0 0 2px;
+    letter-spacing: .2px;
+  }
+  .hero p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+
+  /* ---------- inventory slots ---------- */
+  .slots { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+
+  .slot {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 18px;
+    padding: 13px 14px;
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .2s ease, transform .1s ease;
+  }
+  .slot:active { transform: scale(0.985); }
+  .slot.selected {
+    border-color: var(--mint);
+    box-shadow: 0 0 0 4px var(--mint-soft);
+  }
+  .slot.selected .gem { box-shadow: 0 0 0 3px var(--bg), 0 0 18px -2px var(--mint); }
+
+  .gem {
+    width: 46px; height: 46px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px;
+    transition: box-shadow .2s ease;
+  }
+  .slot[data-tier="starter"] .gem { background: linear-gradient(155deg, #3B4370, #262C4F); }
+  .slot[data-tier="popular"] .gem { background: linear-gradient(155deg, var(--mint), #1FBF8B); }
+  .slot[data-tier="value"]   .gem { background: linear-gradient(155deg, var(--violet), #6A4CDB); }
+
+  .slot-body { flex: 1; min-width: 0; }
+  .slot-top { display: flex; align-items: center; gap: 8px; }
+  .slot-amount {
+    font-family: "Baloo 2", sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+  }
+  .tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 7px;
+    white-space: nowrap;
+  }
+  .tag.popular { background: var(--mint-soft); color: var(--mint); }
+  .tag.value { background: var(--violet-soft); color: var(--violet); }
+  .slot-sub { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+  .slot-price {
+    font-family: "Baloo 2", sans-serif;
+    font-weight: 700;
+    font-size: 15.5px;
+    white-space: nowrap;
+    padding-left: 6px;
+  }
+
+  /* ---------- form ---------- */
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%;
+    padding: 13px 14px;
+    border-radius: 13px;
+    border: 1.5px solid var(--line);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+  }
+  .field input::placeholder { color: var(--muted); }
+  .field input:focus { outline: none; border-color: var(--mint); }
+
+  /* ---------- total + cta ---------- */
+  .total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface-2);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin: 18px 0 14px;
+  }
+  .total .label { font-size: 13.5px; color: var(--muted); }
+  .total .value {
+    font-family: "Baloo 2", sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+  }
+
+  button.cta {
+    width: 100%;
+    border: none;
+    border-radius: 15px;
+    padding: 16px;
+    font-family: "Baloo 2", sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    background: var(--mint);
+    color: #06281D;
+    cursor: pointer;
+    transition: opacity .15s ease, transform .1s ease;
+  }
+  button.cta:active { transform: scale(0.99); }
+  button.cta:disabled { opacity: .4; cursor: default; }
+
+  .note {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 12px;
+    line-height: 1.5;
+  }
+
+  .toast {
+    position: fixed;
+    left: 18px; right: 18px;
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    background: var(--surface-2);
+    border: 1.5px solid var(--line);
+    border-radius: 13px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    text-align: center;
+    transform: translateY(130%);
+    transition: transform .25s ease;
+  }
+  .toast.show { transform: translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="coin">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6V12C4 17 7.5 20.5 12 22C16.5 20.5 20 17 20 12V6L12 2Z" fill="#06281D"/></svg>
+    </div>
+    <div>
+      <h1 class="display">Пополнение Robux</h1>
+      <p>Выбери пакет — зачислим на твой аккаунт</p>
+    </div>
+  </div>
+
+  <div class="slots" id="slots">
+    <div class="slot" data-tier="starter" data-amount="40" data-price="12000">
+      <div class="gem">💠</div>
+      <div class="slot-body">
+        <div class="slot-top">
+          <span class="slot-amount display">40 Robux</span>
+        </div>
+        <div class="slot-sub">Хватит на мелочи в игре</div>
+      </div>
+      <div class="slot-price display">12 000</div>
+    </div>
+
+    <div class="slot" data-tier="popular" data-amount="80" data-price="22000">
+      <div class="gem">💠</div>
+      <div class="slot-body">
+        <div class="slot-top">
+          <span class="slot-amount display">80 Robux</span>
+          <span class="tag popular">берут чаще всего</span>
+        </div>
+        <div class="slot-sub">Оптимальное соотношение</div>
+      </div>
+      <div class="slot-price display">22 000</div>
+    </div>
+
+    <div class="slot" data-tier="value" data-amount="400" data-price="70000">
+      <div class="gem">💠</div>
+      <div class="slot-body">
+        <div class="slot-top">
+          <span class="slot-amount display">400 Robux</span>
+          <span class="tag value">выгоднее всего</span>
+        </div>
+        <div class="slot-sub">Цена за 1 Robux ниже остальных</div>
+      </div>
+      <div class="slot-price display">70 000</div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="username">Ник в Roblox</label>
+    <input type="text" id="username" placeholder="например, Player12345" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label for="contact">Контакт для связи</label>
+    <input type="text" id="contact" placeholder="@username или +998 ..." autocomplete="off">
+  </div>
+
+  <div class="total">
+    <div class="label">К оплате</div>
+    <div class="value display" id="totalPrice">— сум</div>
+  </div>
+
+  <button class="cta" id="orderBtn" disabled>Выбери пакет</button>
+  <div class="note">Оплата и выдача Robux обсуждаются с продавцом после отправки заявки.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const tg = window.Telegram ? window.Telegram.WebApp : null;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    if (tg.colorScheme === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+  }
+
+  let selected = null;
+  const slots = document.querySelectorAll('.slot');
+  const orderBtn = document.getElementById('orderBtn');
+  const totalPrice = document.getElementById('totalPrice');
+  const usernameInput = document.getElementById('username');
+  const contactInput = document.getElementById('contact');
+
+  function fmt(n) {
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " сум";
+  }
+
+  slots.forEach(slot => {
+    slot.addEventListener('click', () => {
+      slots.forEach(s => s.classList.remove('selected'));
+      slot.classList.add('selected');
+      selected = {
+        amount: slot.dataset.amount,
+        price: parseInt(slot.dataset.price, 10)
+      };
+      totalPrice.textContent = fmt(selected.price);
+      orderBtn.disabled = false;
+      orderBtn.textContent = "Оформить заказ";
+    });
+  });
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2800);
+  }
+
+  orderBtn.addEventListener('click', () => {
+    if (!selected) return;
+    const username = usernameInput.value.trim();
+    const contact = contactInput.value.trim();
+
+    if (!username) { showToast("Введи ник в Roblox"); usernameInput.focus(); return; }
+    if (!contact) { showToast("Укажи контакт для связи"); contactInput.focus(); return; }
+
+    const order = {
+      robux: selected.amount,
+      price_sum: selected.price,
+      roblox_username: username,
+      contact: contact
+    };
+
+    if (tg && tg.sendData) {
+      tg.sendData(JSON.stringify(order));
+      tg.close();
+    } else {
+      showToast(`Заявка: ${order.robux} Robux за ${fmt(order.price_sum)} для ${username}`);
+    }
+  });
+</script>
+</body>
+</html>
